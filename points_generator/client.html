@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Go WebSocket Tutorial</title>
+    <title>WS test client</title>
   </head>
   <body>
-    <h2>Hello World</h2>
+    <h2>WS test client</h2>
 
     <script>
         let socket = new WebSocket("ws://127.0.0.1:4000/ws");
@@ -15,18 +15,15 @@
 
         socket.onopen = () => {
             console.log("Successfully Connected");
-            socket.send("Hi From the Client!")
         };
         
         socket.onclose = event => {
             console.log("Socket Closed Connection: ", event);
-            socket.send("Client Closed!")
         };
 
         socket.onerror = error => {
             console.log("Socket Error: ", error);
         };
-
     </script>
   </body>
 </html>
