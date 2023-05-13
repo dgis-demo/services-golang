@@ -1,3 +1,3 @@
 package main
 
-const RPS = 10
+const RPS = 1

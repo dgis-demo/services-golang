@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -16,10 +14,6 @@ var upgrager = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func homePage(writer http.ResponseWriter, request *http.Request) {
-	fmt.Fprintf(writer, "Home page")
-}
-
 type Point struct {
 	Lat       float32 `json:"lat"`
 	Lon       float32 `json:"lon"`
@@ -31,7 +25,7 @@ func wsEndpoint(writer http.ResponseWriter, request *http.Request) {
 
 	ws, err := upgrager.Upgrade(writer, request, nil)
 	if err != nil {
-		log.Println(err)
+		log.Printf("ws upgrader error: %s", err)
 	}
 
 	for {
@@ -40,14 +34,11 @@ func wsEndpoint(writer http.ResponseWriter, request *http.Request) {
 			Lon:       float32((rand.Intn(180) - rand.Intn(180))) + rand.Float32(),
 			Magnitude: float32(rand.Intn(10)) + rand.Float32(),
 		}
-		marshalledPoint, err := json.Marshal(point)
-		if err != nil {
-			log.Println(err)
-		}
 
-		err = ws.WriteJSON(string(marshalledPoint))
+		err = ws.WriteJSON(point)
 		if err != nil {
-			log.Println(err)
+			log.Printf("JSON messaging error: %s", err)
+			break
 		}
 
 		time.Sleep(time.Second / RPS)
@@ -55,8 +46,7 @@ func wsEndpoint(writer http.ResponseWriter, request *http.Request) {
 }
 
 func setupRoutes() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/ws", wsEndpoint)
+	http.HandleFunc("/", wsEndpoint)
 }
 
 func main() {
