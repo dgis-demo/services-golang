@@ -1,33 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>WS test client</title>
-  </head>
-  <body>
-    <h2>WS test client</h2>
+<head>
+	<base target="_top">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>Map</title>
+	
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
 
-    <script>
-        let socket = new WebSocket("ws://127.0.0.1:4000");
-        console.log("Attempting Connection...");
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
 
-        socket.onopen = () => {
-            console.log("Successfully Connected");
-        };
+	<style>
+		body { 
+			margin:0; 
+			padding:0; 
+		}
+		#map { 
+			position: absolute; 
+			top:0; 
+			bottom:0; 
+			right:0; 
+			left:0; 
+			z-index:1; 
+		}
+	</style>
+</head>
+<body>
+	<div id="map"></div>
+		<script>
+			const map = L.map('map', {
+				center: [0, 0],
+				zoom: 2,
+				tap: false
+			});
 
-        socket.onmessage = event => {
-          console.log(JSON.parse(event.data));
-        };
-        
-        socket.onclose = event => {
-            console.log("Socket Closed Connection: ", event);
-        };
+			const tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', 
+				{
+					attribution: `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, 
+					&copy; <a href="https://carto.com/attribution">CARTO</a>`,
+				},
+			).addTo(map);
 
-        socket.onerror = error => {
-            console.log("Socket Error: ", error);
-        };
-    </script>
-  </body>
+			const socket = new WebSocket("ws://127.0.0.1:4000");
+
+			socket.onmessage = event => {
+				const point = JSON.parse(event.data);
+				const marker = L.circleMarker(
+					[point.lat, point.lon],
+					{
+						radius: 3,
+					},
+				).bindPopup(`magnitude: ${point.magnitude}`);
+				marker.addTo(map);
+			};
+		</script>
+	</body>
 </html>
