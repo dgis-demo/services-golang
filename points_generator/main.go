@@ -38,7 +38,7 @@ func wsEndpoint(writer http.ResponseWriter, request *http.Request) {
 		point := &Point{
 			Lat:       float32((rand.Intn(90) - rand.Intn(90))) + rand.Float32(),
 			Lon:       float32((rand.Intn(180) - rand.Intn(180))) + rand.Float32(),
-			Magnitude: float32(rand.Intn(10)) - rand.Float32(),
+			Magnitude: float32(rand.Intn(10)) + rand.Float32(),
 		}
 		marshalledPoint, err := json.Marshal(point)
 		if err != nil {
@@ -50,7 +50,7 @@ func wsEndpoint(writer http.ResponseWriter, request *http.Request) {
 			log.Println(err)
 		}
 
-		time.Sleep(time.Second)
+		time.Sleep(time.Second / RPS)
 	}
 }
 
