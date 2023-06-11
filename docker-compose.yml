@@ -7,3 +7,6 @@ services:
     environment:
       # NOTE: development-only option
       - ALLOW_PLAINTEXT_LISTENER=yes
+      # NOTE: development-only option
+    ports:
+      - 9092:9092

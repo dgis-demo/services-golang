@@ -1,18 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
-	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
-
-var upgrager = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
 
 type Point struct {
 	Lat       float32 `json:"lat"`
@@ -20,13 +16,46 @@ type Point struct {
 	Magnitude float32 `json:"magnitude"`
 }
 
-func wsEndpoint(writer http.ResponseWriter, request *http.Request) {
-	upgrager.CheckOrigin = func(request *http.Request) bool { return true }
+func createProducer() *kafka.Producer {
+	producer, err := kafka.NewProducer(
+		&kafka.ConfigMap{
+			"bootstrap.servers": fmt.Sprintf(
+				"%s:%s",
+				KAFKA_HOST,
+				KAFKA_PORT,
+			),
+			"client.id": "client_service",
+			"acks":      "all",
+		},
+	)
 
-	ws, err := upgrager.Upgrade(writer, request, nil)
 	if err != nil {
-		log.Printf("ws upgrader error: %s", err)
+		log.Printf("failed to create producer: %s", err)
 	}
+	return producer
+}
+
+func sendMessage(
+	producer *kafka.Producer,
+	topic string,
+	message []byte,
+) error {
+	delivery_chan := make(chan kafka.Event, 10000)
+	err := producer.Produce(
+		&kafka.Message{
+			TopicPartition: kafka.TopicPartition{
+				Topic:     &topic,
+				Partition: kafka.PartitionAny,
+			},
+			Value: message,
+		},
+		delivery_chan,
+	)
+	return err
+}
+
+func main() {
+	producer := createProducer()
 
 	for {
 		point := &Point{
@@ -35,22 +64,19 @@ func wsEndpoint(writer http.ResponseWriter, request *http.Request) {
 			Magnitude: float32(rand.Intn(10)) + rand.Float32(),
 		}
 
-		err = ws.WriteJSON(point)
+		message, err := json.Marshal(point)
 		if err != nil {
-			log.Printf("JSON messaging error: %s", err)
+			log.Printf("failed to create a message: %s", err)
 			break
 		}
 
+		err = sendMessage(producer, KAFKA_TOPIC, message)
+		if err != nil {
+			log.Printf("failed to send a message: %s", err)
+			break
+		}
+
+		log.Printf("message has been sent, %v", point)
 		time.Sleep(time.Second / RPS)
 	}
-}
-
-func setupRoutes() {
-	http.HandleFunc("/", wsEndpoint)
-}
-
-func main() {
-	log.Println("WS server has been started")
-	setupRoutes()
-	log.Println(http.ListenAndServe(":4000", nil))
 }
