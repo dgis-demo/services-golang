@@ -5,8 +5,9 @@ services:
   kafka:
     image: 'bitnami/kafka:latest'
     environment:
-      # NOTE: development-only option
+      # NOTE: development-only options
       - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
       # NOTE: development-only option
     ports:
       - 9092:9092
